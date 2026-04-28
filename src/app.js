@@ -13,9 +13,16 @@ const { errorHandler } = require('./middlewares/errorHandler');
 
 const app = express();
 const openApiDocument = YAML.load(path.join(__dirname, 'docs/openapi.yaml'));
+const corsOptions = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  optionsSuccessStatus: 204
+};
 
 app.use(helmet());
-app.use(cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '1mb' }));
 app.use(morgan('dev'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
