@@ -76,6 +76,84 @@ components:
         emergencyId:
           type: string
           example: emergency-123
+    CreateEmergencyRequest:
+      type: object
+      required: [category, civilian_id, location, type]
+      properties:
+        category:
+          type: string
+          example: Medical
+        civilian_id:
+          type: string
+          example: PGxGgaBkjJXVhsdq8TQNLcz0BrB3
+        description:
+          type: string
+          example: hgghhhh
+        location:
+          type: object
+          required: [lat, lng]
+          properties:
+            geohash:
+              type: string
+              example: tfcynzyvk
+            lat:
+              type: number
+              format: double
+              example: 16.5669282
+            lng:
+              type: number
+              format: double
+              example: 81.517038
+        priority:
+          type: string
+          example: low
+        type:
+          type: string
+          example: HELP
+    CreateEmergencyData:
+      type: object
+      properties:
+        emergency_id:
+          type: string
+          example: 2d8fbfd5-dd22-4fe9-84a7-2f88f5f8ec99
+        category:
+          type: string
+          example: Medical
+        civilian_id:
+          type: string
+          example: PGxGgaBkjJXVhsdq8TQNLcz0BrB3
+        description:
+          type: string
+          example: hgghhhh
+        location:
+          type: object
+          properties:
+            geohash:
+              type: string
+              example: tfcynzyvk
+            lat:
+              type: number
+              format: double
+              example: 16.5669282
+            lng:
+              type: number
+              format: double
+              example: 81.517038
+        priority:
+          type: string
+          example: low
+        status:
+          type: string
+          example: active
+        type:
+          type: string
+          example: HELP
+        created_at:
+          type: number
+          example: 1684567890123
+        updated_at:
+          type: number
+          example: 1684567890123
     SuccessEnvelope:
       type: object
       properties:
@@ -101,6 +179,35 @@ components:
           items:
             type: object
 paths:
+  /emergencies:
+    post:
+      tags: [Emergency]
+      summary: Create a new emergency request
+      description: Creates a new emergency request document in the database.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEmergencyRequest'
+      responses:
+        '201':
+          description: Emergency request created successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CreateEmergencyData'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
   /health:
     get:
       tags: [Health]

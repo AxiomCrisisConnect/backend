@@ -8,6 +8,7 @@ const swaggerUi = require('swagger-ui-express');
 
 const { healthRouter } = require('./modules/health/health.routes');
 const { dispatchRouter } = require('./modules/dispatch/dispatch.routes');
+const { emergencyRouter } = require('./modules/emergency/emergency.routes');
 const { notFound } = require('./middlewares/notFound');
 const { errorHandler } = require('./middlewares/errorHandler');
 
@@ -29,6 +30,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 app.use('/api/v1/health', healthRouter);
 app.use('/api/v1/dispatch', dispatchRouter);
+app.use('/api/v1/emergencies', emergencyRouter);
 
 app.use(notFound);
 app.use(errorHandler);
