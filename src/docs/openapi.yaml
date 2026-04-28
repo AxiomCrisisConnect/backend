@@ -1,0 +1,218 @@
+openapi: 3.0.3
+info:
+  title: CrisisConnect Backend API
+  version: 1.0.0
+  description: API for allocating volunteers to existing emergency requests.
+servers:
+  - url: http://localhost:4000/api/v1
+    description: Local development
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    HealthResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: CrisisConnect backend is healthy
+    AllocateEmergencyRequest:
+      type: object
+      required: [emergencyId]
+      properties:
+        emergencyId:
+          type: string
+          example: emergency-123
+    AssignedVolunteer:
+      type: object
+      nullable: true
+      properties:
+        assignmentId:
+          type: string
+          example: assignment-abc
+        volunteerId:
+          type: string
+          example: volunteer-uid-1
+    AllocateEmergencyData:
+      type: object
+      properties:
+        emergencyId:
+          type: string
+          example: emergency-123
+        status:
+          type: string
+          example: assigned
+        requiredSkills:
+          type: array
+          items:
+            type: string
+          example: [Medical]
+        assignedVolunteer:
+          $ref: '#/components/schemas/AssignedVolunteer'
+    AssignmentResponseRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [accepted, declined]
+          example: accepted
+    AssignmentResponseData:
+      type: object
+      properties:
+        assignmentId:
+          type: string
+          example: assignment-abc
+        status:
+          type: string
+          enum: [accepted, declined]
+          example: accepted
+        emergencyId:
+          type: string
+          example: emergency-123
+    SuccessEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Request successful
+        data:
+          type: object
+    ErrorEnvelope:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Invalid request payload
+        details:
+          type: array
+          items:
+            type: object
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Check backend health
+      responses:
+        '200':
+          description: Service healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /dispatch/emergencies/allocate:
+    post:
+      tags: [Dispatch]
+      summary: Allocate best volunteer for an existing emergency request
+      description: Reads an existing emergency request from Firestore and assigns one best volunteer.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AllocateEmergencyRequest'
+      responses:
+        '200':
+          description: Allocation attempted
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AllocateEmergencyData'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Missing or invalid Firebase token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Emergency request not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '409':
+          description: Emergency cannot be allocated (already assigned/resolved/cancelled)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /dispatch/assignments/{assignmentId}/respond:
+    post:
+      tags: [Dispatch]
+      summary: Respond to assignment (volunteer)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: assignmentId
+          required: true
+          schema:
+            type: string
+          example: assignment-abc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentResponseRequest'
+      responses:
+        '200':
+          description: Assignment response recorded
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/AssignmentResponseData'
+        '400':
+          description: Invalid payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Missing or invalid Firebase token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '403':
+          description: Volunteer not authorized for this assignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '404':
+          description: Assignment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
